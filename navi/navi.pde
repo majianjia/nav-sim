@@ -1,6 +1,4 @@
 
-float target_x = 500, target_y = 300;
-float base_x = 100, base_y = 300;
 
 float ship_bearing = 180;
 float ship_speed = 1.2;
@@ -20,6 +18,16 @@ float crosstrack_err = 0;
 
 boolean is_critical_bearing = false;
 float freezed_correction = 0;
+
+// navi
+float path_width = 50; 
+float target_x = 500, target_y = 300;
+float base_x = 100, base_y = 300;
+
+float ship_base_x = ship_x, ship_base_y = ship_y; // temporary based point when distance from ship is too far from track (2x pathwidth.)
+float intcpt_target_x, intcpt_target_y;
+boolean is_ship_base_locked = false;
+
 
 // sail
 float sail_cl = 0.5; // lift to drag coefficient. 
@@ -94,9 +102,28 @@ float nav(){
     target_distance = sqrt((ship_x-target_x)*(ship_x-target_x)+(ship_y-target_y)*(ship_y-target_y));
     crosstrack_err = sin(radians(offset_angle)) * target_distance;
     
+    // when ship is too far from path, add an temporary target where intercept with the path
+    if(crosstrack_err > path_width *2 && is_ship_base_locked == false)
+    {
+      is_ship_base_locked = true;
+      ship_base_x = ship_x;
+      ship_base_y = ship_y;
+      
+      //
+      intcpt_target_x = ship_base_x + crosstrack_err * sin(track_angle);
+      intcpt_target_y = ship_base_y + crosstrack_err * cos(track_angle);
+      
+      print(ship_base_x, ship_base_y, intcpt_target_x, intcpt_target_y, '\n');
+    
+    }
+    if(crosstrack_err < path_width)
+    {
+      is_ship_base_locked = false;
+    }
+    
 
     // change zigzag side. when distance too far or already close to target.
-    if(abs(crosstrack_err) >= 50 || abs(crosstrack_err) >= target_distance*0.3)
+    if(abs(crosstrack_err) >= path_width || abs(crosstrack_err) >= target_distance*0.3)
     {
       if(crosstrack_err >0)// && zigzag_side == 1) 
         zigzag_side = -1;
@@ -115,7 +142,7 @@ float nav(){
     }
       
     // if headwind, we ignore the cross track error because we are doing zigzaging
-    if(abs(crosstrack_err) < 50 && head_wind_offset != 0)
+    if(abs(crosstrack_err) < path_width && head_wind_offset != 0)
     {
       crosstrack_err = 0;
     }
@@ -260,12 +287,6 @@ void grid(){
     }
 }
 
-void draw_target(float x, float y, float size)
-{
-    pushMatrix();
-    circle(x, y, size);
-    popMatrix();
-}
 
 void draw_current()
 {
@@ -301,6 +322,46 @@ void draw_info()
     text("ship_v:" + ship_speed, width - 200, idx++*space);
 }
 
+
+void draw_target(float x, float y, float size)
+{
+    pushMatrix();
+    circle(x, y, size);
+    popMatrix();
+}
+
+void draw_path()
+{
+  stroke(32);
+  draw_target(base_x, base_y, 10);
+  draw_target(target_x, target_y, 20);
+  stroke(0, 255, 255);
+  line(target_x, target_y, ship_x, ship_y);
+  
+  stroke(255, 128, 128);
+  line(base_x, base_y, target_x, target_y);
+  stroke(32);
+
+  
+  float x1, y1, x2, y2, ang, clen, slen;
+  x1 = base_x;
+  y1 = base_y;
+  x2 = target_x;
+  y2 = target_y;
+  ang = -atan2(y2-y1, x2-x1); // why this is negative?
+  clen = cos(ang)*path_width;
+  slen = sin(ang)*path_width;
+  // draw 
+
+  stroke(192, 96, 96);
+  line(x1+slen, y1+clen, x2+slen, y2+clen);
+  line(x1-slen, y1-clen, x2-slen, y2-clen);
+  
+  stroke(253, 22, 92);
+  line(ship_base_x, ship_base_y, intcpt_target_x, intcpt_target_y);
+
+}
+
 int acc_speed = 1;
 void draw() {
     int i = acc_speed;
@@ -316,16 +377,9 @@ void draw() {
         stroke(32);
         fill(255);
         grid();  
-        draw_target(base_x, base_y, 10);
-        stroke(255, 128, 128);
-        line(base_x, base_y, target_x, target_y);
-        stroke(32);
-        draw_target(target_x, target_y, 20);
-        stroke(0, 255, 255);
-        line(target_x, target_y, ship_x, ship_y);
-        stroke(32);
-        draw_ship();
         draw_current();
+        draw_path();
+        draw_ship();
         draw_info();
         // update position
         
