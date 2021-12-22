@@ -78,8 +78,8 @@ class Ship {
     loc.lat += Math.sin((bearing) / 180 * PI) * speed / R * 180/PI * step ; // also consider the step.
     loc.lon += Math.cos((bearing) / 180 * PI) * speed / R * 180/PI * step;
     
-    loc.lat -= Math.sin((world.wind_dir) / 180 * PI)*speed * 0.0 / R * 180/PI * step;  // drift by wind, test only
-    loc.lon -= Math.cos((world.wind_dir) / 180 * PI)*speed * 0.0 / R * 180/PI * step; 
+    loc.lat -= Math.sin((world.wind_dir) / 180 * PI)*speed * 0.2 / R * 180/PI * step;  // drift by wind, test only
+    loc.lon -= Math.cos((world.wind_dir) / 180 * PI)*speed * 0.2 / R * 180/PI * step; 
      
     loc.lon = Math.min(Math.max(loc.lon, world.coor_min.lon), world.coor_max.lon);
     loc.lat = Math.min(Math.max(loc.lat, world.coor_min.lat), world.coor_max.lat);

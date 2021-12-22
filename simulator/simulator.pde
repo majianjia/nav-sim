@@ -1,5 +1,7 @@
 
 float frame_rate = 30; // frame/sec
+int start = millis();
+int time = 0;
 World world;
 Ship ship;
 Navigator navi;
@@ -41,6 +43,7 @@ void draw_info(Ship ship, Navigator navi, World world)
     
     text("Navi output:"+ nf(navi.rudder, 0, 3), x, idx++*space);
     text("Navi zigzag:"+ nf(navi.zigzag_side, 0, 0), x, idx++*space);
+    text("Time: "+ time/1000, x, idx++*space);
 }
 
 
@@ -68,7 +71,7 @@ void draw() {
     ship.draw(world);
     draw_info(ship, navi, world);
 
-    if(navi.target_dis < 5)
+    if(navi.target_dis < 3)
     {
         double lat, lon;
         lat = navi.target.lat;
@@ -78,6 +81,10 @@ void draw() {
         //navi.target.lon = navi.base.lon;
         navi.base.lat = lat;
         navi.base.lon = lon;
+        
+        //
+        time = millis() - start;
+        start = millis();
     }
 }
 

@@ -283,7 +283,6 @@ class Navigator{
     
      // detect if too far from path, then we create a temporary path to work with. 
      if(abs(crosstrack_dis) > out_path_dis){
-       
        // ship is already out of primary path, check the cross track to the temporary track, if it is too large, we need to reset the temporary track
        if(!is_inpath){
          float cross_err = (float)get_cross_track_distance(t_base, t_target, ship.loc);
@@ -345,6 +344,7 @@ class Navigator{
        if(!is_inpath)
        {
          print("temp path disable\n");
+         is_target_updated = true; // reset zigzag side
        }
        is_inpath = true;
      }
@@ -428,32 +428,48 @@ class Navigator{
     float wing_front_upper = (float)get_bearing((ship.bearing + wing_angle) + wing_limit_angle); // get the current wing bearing 
     float wing_front_lower = (float)get_bearing((ship.bearing + wing_angle) - wing_limit_angle);
     
-    //print(wing_front_upper, wing_front_lower, wing_angle, target_bearing, correction, " ");
+    print((int)wing_front_lower, (int)wing_front_upper, (int)target_bearing, '\n');
     
-    // see the zigzag side is matching the boundary. 
-    if((angle_corr(wing_front_lower - target_bearing) < 0 || zigzag_side > 0) &&
-       (angle_corr(wing_front_upper - target_bearing) > 0 || zigzag_side < 0) && 
-       abs(angle_corr(target_bearing - ship.bearing)) < 120)
-    //if((angle_corr(wing_front_lower - target_bearing) < 0) &&
-    //   (angle_corr(wing_front_upper - target_bearing) > 0))
-    {      
-      //float b = abs(limit(angle_corr(ship2target - ship.bearing), 90, -90)); // also add ship bearing to track bearing. 
-      //float b = abs(limit(angle_corr(base2target - ship.bearing), 90, -90)); // track bearing
-      float a = wing_limit_angle - abs(wing_angle); // why this is 45
-      float b = abs(limit(angle_corr(ship2target - ship.bearing), 120-a, -(120-a))); // also add ship bearing to track bearing.     
-      head_wind_offset = zigzag_side * (a + b); 
-      // print(correction);
-      correction += head_wind_offset;
-      correction = angle_corr(correction);
-      print("bad  \n");
-      print(zigzag_side, ship.wing.angle, wing_angle, a, b,  head_wind_offset, correction, "\n");
-    }
-    else
+    // head wind
+    if(angle_corr(wing_front_lower - target_bearing) < 0 
+        && angle_corr(wing_front_upper - target_bearing) > 0)
     {
-       print("good \n");
+      print((int) zigzag_side, " head wind!  ");
+      if(zigzag_side < 0)
+      {
+        correction += angle_corr(wing_front_lower - target_bearing);
+      }
+      else
+      {
+        correction += angle_corr(wing_front_upper - target_bearing);
+      }
     }
+
+    ////print(wing_front_upper, wing_front_lower, wing_angle, target_bearing, correction, " ");
     
-    
+    //// see the zigzag side is matching the boundary. 
+    //if((angle_corr(wing_front_lower - target_bearing) < 0 || zigzag_side > 0) &&
+    //   (angle_corr(wing_front_upper - target_bearing) > 0 || zigzag_side < 0) && 
+    //   abs(angle_corr(target_bearing - ship.bearing)) < 120)
+    ////if((angle_corr(wing_front_lower - target_bearing) < 0) &&
+    ////   (angle_corr(wing_front_upper - target_bearing) > 0))
+    //{      
+    //  //float b = abs(limit(angle_corr(ship2target - ship.bearing), 90, -90)); // also add ship bearing to track bearing. 
+    //  //float b = abs(limit(angle_corr(base2target - ship.bearing), 90, -90)); // track bearing
+    //  float a = wing_limit_angle - abs(wing_angle); // why this is 45
+    //  float b = abs(limit(angle_corr(ship2target - ship.bearing), 120-a, -(120-a))); // also add ship bearing to track bearing.     
+    //  head_wind_offset = zigzag_side * (a + b); 
+    //  // print(correction);
+    //  correction += head_wind_offset;
+    //  correction = angle_corr(correction);
+    //  print("bad  \n");
+    //  print(zigzag_side, ship.wing.angle, wing_angle, a, b,  head_wind_offset, correction, "\n");
+    //}
+    //else
+    //{
+    //   print("good \n");
+    //}
+   
     //print((int)ship.bearing, (int)ship.wing.angle, '\n');
 
     // avoid oscillation and shooting backward, when angle >90, freezed the correction until it turns back to target. 
@@ -494,7 +510,7 @@ class Navigator{
       textAlign(CENTER, TOP);
       fill(255, 255, 255);
       circle(x, y, size);
-      text("("+nf((float)loc.lat, 0, 7) + ", " + nf((float)loc.lon, 0, 7)+")", x, y+size);
+      text("("+nf((float)loc.lat, 0, 5) + ", " + nf((float)loc.lon, 0, 5)+")", x, y+size);
       popMatrix();
 
   }
@@ -524,7 +540,7 @@ class Navigator{
       stroke(0, 255, 255);
       line(t_target_x, t_target_y, ship_x, ship_y); // line to temporary target
       
-       stroke(96, 150, 192);
+      stroke(96, 150, 192);
       line(t_base_x, t_base_y, t_target_x, t_target_y);
       stroke(32);
     

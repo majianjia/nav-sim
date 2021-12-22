@@ -103,6 +103,7 @@ class World {
         line(x, 0, x, height);
         float mark = -world_width/2 + tick * step;
         if(x>0 && x < width - 3*space)  {
+          fill(128);
           textAlign(CENTER, TOP);
           text(round(mark) + "m", x, height/2);
         }
@@ -114,6 +115,7 @@ class World {
         float mark = -world_width/2 * ((float)height/width) + tick * step;
         
         if(y>0 && y < height){
+          fill(128);
           textAlign(LEFT, CENTER);
           text(round(-mark) + "m", width/2, y);
         }
