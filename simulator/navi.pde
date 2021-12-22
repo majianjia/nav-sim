@@ -428,12 +428,13 @@ class Navigator{
     float wing_front_upper = (float)get_bearing((ship.bearing + wing_angle) + wing_limit_angle); // get the current wing bearing 
     float wing_front_lower = (float)get_bearing((ship.bearing + wing_angle) - wing_limit_angle);
     
-    print((int)wing_front_lower, (int)wing_front_upper, (int)target_bearing, '\n');
+    print('\n', (int)wing_front_lower, (int)wing_front_upper, (int)target_bearing, correction);
     
     // head wind
-    if(angle_corr(wing_front_lower - target_bearing) < 0 
+    if((angle_corr(wing_front_lower - target_bearing) < 0 
         && angle_corr(wing_front_upper - target_bearing) > 0)
-    {
+        || abs(wing_angle) < 30)
+    {      
       print((int) zigzag_side, " head wind!  ");
       if(zigzag_side < 0)
       {
@@ -441,9 +442,11 @@ class Navigator{
       }
       else
       {
-        correction += angle_corr(wing_front_upper - target_bearing);
+        correction += angle_corr(wing_front_upper - target_bearing); 
       }
+      correction = angle_corr(correction);
     }
+    print(correction);
 
     ////print(wing_front_upper, wing_front_lower, wing_angle, target_bearing, correction, " ");
     
