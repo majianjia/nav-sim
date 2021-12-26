@@ -1,3 +1,5 @@
+ 
+import java.util.*;
 
 // REF: https://www.movable-type.co.uk/scripts/latlong.html
 // haversine method
@@ -185,14 +187,18 @@ float limit(float v, float max, float min)
   return max(min(v, max), min);
 }
 
-class Navigator{
 
-  float path_width = 10; 
-  float out_path_dis = path_width * 3;
+
+class Navigator{
+  
+  LinkedList<Coor> waypoints =new LinkedList<Coor>();
+
+  float path_width = 20; 
+  float out_path_dis =   path_width * 3;
   float max_off_angle = 70;
-  float cross_track_ratio = 10; // 1 meter cross track error = N degree
+  float cross_track_ratio = 5; // 1 meter cross track error = N degree
   float L1 = 10;
-  float wing_limit_angle = 35;  // the minimum wing relative angle 
+  float wing_limit_angle = 30;  // the minimum wing relative angle 
   
   // outputs
   float bearing = 0; // output the expected bearing
@@ -220,6 +226,7 @@ class Navigator{
   boolean is_inpath = true; 
   boolean is_critical_bearing = false;
   boolean is_target_updated = false;    // whether to trigger a recalculation of related 
+  boolean is_zigzagging = false;
   float freezed_correction = 0;
   
   Navigator(){   
@@ -229,11 +236,45 @@ class Navigator{
     //float brng2 =  32.435;
     //Coor pint = intersection(p1, brng1, p2, brng2); // 50.9078°N, 004.5084°E
     //print(pint);
+    
+    waypoints.add(new Coor(target));
+    base = new Coor(ship.loc);
   }
   
   Navigator(float path_width)
   {
     this.path_width = path_width;
+    waypoints.add(new Coor(target));
+    base = new Coor(ship.loc);
+  }
+  
+  void target_reached()
+  {
+    if(waypoints.size() > 1)
+    {
+      base = waypoints.get(0);
+      waypoints.removeFirst();
+      target = waypoints.get(0);
+    }
+    else
+    {
+        double lat, lon;
+        lat = target.lat;
+        lon = target.lon;
+        target.lat = base.lat;
+        target.lon = base.lon;
+        base.lat = lat;
+        base.lon = lon;
+    }  
+    is_inpath = true; 
+    is_target_updated = true;
+    is_critical_bearing  = true;// test, turn until it back to good track.
+    freezed_correction = angle_corr((float)get_bearing(get_theta(base, target)) - ship.bearing);
+  }
+  
+  void add_waypoint(double lat, double lon)
+  {
+    waypoints.add(new Coor(lat, lon));
   }
   
   void set_target(double lat, double lon)
@@ -365,9 +406,7 @@ class Navigator{
      float ta_dis = (float)get_distance(ship.loc, ta);
      float base2target = (float)get_bearing(get_theta(ba, ta));
      float ship2target = (float)get_bearing(get_theta(ship.loc, ta));
-     
-
-         
+       
     //boolean is_sailing = true;
     boolean is_sailing = true;
     
@@ -398,6 +437,104 @@ class Navigator{
     else {
     }
     
+    // // see if reset
+    if(is_target_updated)
+    {
+      is_target_updated = false;
+      print("target reseted\n");
+      zigzag_side = reset_zigzag_side(-correction); // change zigzag side according to correction angle.
+      //zigzag_side = reset_zigzag_side(zigzag_side);
+      //zigzag_side = reset_zigzag_side(ship.wing.angle);
+    }
+        
+    //float wing_angle = ship.wing.angle ;
+    //// convert +-180 to +-90, mod is not working correctly in java with negative number???
+    //if(ship.wing.angle > 90)
+    //  wing_angle -= 180;
+    //else if(ship.wing.angle < -90)
+    //  wing_angle += 180;
+    
+    //float target_bearing = (float)get_bearing(correction + ship.bearing);
+    ////print(target_bearing+"\n");
+    //// get upper and lower boundary
+    //float wing_front_upper = (float)get_bearing((ship.bearing + wing_angle) + wing_limit_angle); // get the current wing bearing 
+    //float wing_front_lower = (float)get_bearing((ship.bearing + wing_angle) - wing_limit_angle);
+    
+    ////print('\n', (int)wing_front_lower, (int)wing_front_upper, (int)target_bearing, correction);
+    
+    //// head wind
+    //if((angle_corr(wing_front_lower - target_bearing) < 0 
+    //    && angle_corr(wing_front_upper - target_bearing) > 0)
+    //    || abs(wing_angle) < wing_limit_angle) // this is needed. otherwise it keep turn in when target is around 30 degree
+    //if(abs(wing_angle) < wing_limit_angle) // ... why this simple things works? other than the above
+    //{      
+    //  //print((int) zigzag_side, " head wind!  ");
+    //  if(zigzag_side < 0)
+    //  {
+    //    correction += angle_corr(wing_front_lower - target_bearing);
+    //  }
+    //  else
+    //  {
+    //    correction += angle_corr(wing_front_upper - target_bearing); 
+    //  }
+    //  correction = angle_corr(correction);
+    //}
+    //print((int)wing_front_upper,(int) wing_front_lower, (int)wing_angle, (int)target_bearing, (int)correction, " \n");
+    
+    
+    float target_bearing = (float)get_bearing(correction + ship.bearing);
+    float wing_angle = ship.wing.angle ;
+    // convert +-180 to +-90. 
+    if(ship.wing.angle > 90)
+      wing_angle -= 180;
+    else if(ship.wing.angle < -90)
+      wing_angle += 180;
+    
+    float first, second, third, forth; // dimemsion of available angle
+    float wing_bearing = (float)get_bearing(ship.bearing + wing_angle);
+    first = (float)get_bearing(wing_bearing + 180 + (180 -wing_limit_angle));
+    second = (float)get_bearing(wing_bearing + wing_limit_angle);
+    third = (float)get_bearing(wing_bearing + (180 - wing_limit_angle));
+    forth = (float)get_bearing(wing_bearing + 180 + wing_limit_angle);
+    
+    // calculate each rotation and decide which to use. 
+    float dir[] = new float[4];
+    dir[0] = angle_corr(first - target_bearing);
+    dir[1] = angle_corr(second - target_bearing);
+    dir[2] = angle_corr(third - target_bearing);
+    dir[3] = angle_corr(forth - target_bearing);
+    
+    //dir[0] = angle_corr(first - ship2target);
+    //dir[1] = angle_corr(second - ship2target);
+    //dir[2] = angle_corr(third - ship2target);
+    //dir[3] = angle_corr(forth - ship2target);
+    
+    // detect the target bearing is in which section. 
+    // 1 = first-second. 2 = second-third, 3 = third-forth, 4= forth-first. 
+    // forbiden sections are 1 and 3. In these section, will need to perform zigzagging. 
+    
+    print((int)correction, " ");
+    
+    //// compensate the ship bearing to track bearing 
+    //// because we are using current target bearing, when it near the target, it will start oscillating between zigzaging or direct mode.
+    //// so we add the compensation to the wing angles to limit the ranges.  
+    float off = angle_corr(base2target - target_bearing); //
+    float first_ext = dir[0];
+    float second_ext = dir[1];
+    print((int)off, " ");
+    //if(zigzag_side > 0)
+    //  first_ext = angle_corr(dir[0] - off); 
+    //else 
+    //  second_ext = angle_corr(dir[1] + off);
+    
+    
+    // expend the other side to increase the detection range.
+    float corr = limit(correction, (90-wing_limit_angle), -(90-wing_limit_angle)); // make sure this wong overlap
+    if(zigzag_side > 0)
+      first_ext = angle_corr(dir[0]  + corr); 
+    else 
+      second_ext = angle_corr(dir[1]  + corr);
+      
     // change zigzag side. when distance too far or already close to target.
     if(abs(ct_dis) >= path_width/2  || abs(ct_dis) >= ta_dis*0.3 || is_target_updated)
     {
@@ -407,65 +544,97 @@ class Navigator{
         zigzag_side = 1;
     }
     
-     // see if reset
-    if(is_target_updated)
+    
+    // when target direction is in the dead zones - first-second will have different sign. 
+    //if(dir[0] * dir[1] <= 0) // dead zone, both deadzone are same, so only calculate one. 
+    if(first_ext * second_ext < 0)
     {
-      is_target_updated = false;
-      print("target reseted\n");
-      zigzag_side = reset_zigzag_side(ct_dis);
-      //zigzag_side = reset_zigzag_side(zigzag_side);
-      //zigzag_side = reset_zigzag_side(ship.wing.angle);
+        // add ship2track and track bearing compensation. 
+        //float offset = angle_corr(base2target - target_bearing);
+        //correction += offset;
+        //correction = angle_corr(correction);              
+       
+        // do zigzag
+        if(abs(dir[0] * dir[1]) < abs(dir[2]*dir[3])){
+          // switch side
+          if(zigzag_side < 0){
+            correction += dir[0];
+          }
+          else{
+            correction += dir[1];
+          }
+        }
+        else{
+          // switch side
+          if(zigzag_side < 0){
+            correction += dir[3];
+          }
+          else{
+            correction += dir[2];
+          }
+        }        
+        // correct
+        correction = angle_corr(correction);
     }
-        
-    float wing_angle = ship.wing.angle ;
-    // convert +-180 to +-90, mod is not working correctly in java with negative number???
-    if(ship.wing.angle > 90)
-      wing_angle -= 180;
-    else if(ship.wing.angle < -90)
-      wing_angle += 180;
     
-    float target_bearing = (float)get_bearing(correction + ship.bearing);
-    //print(target_bearing+"\n");
-    // get upper and lower boundary
-    float wing_front_upper = (float)get_bearing((ship.bearing + wing_angle) + wing_limit_angle); // get the current wing bearing 
-    float wing_front_lower = (float)get_bearing((ship.bearing + wing_angle) - wing_limit_angle);
+                  
+    //print((int)offset, " "); 
+    print((int)correction, " ");
     
-    //print('\n', (int)wing_front_lower, (int)wing_front_upper, (int)target_bearing, correction);
+    // when in dead zone, which pair's correction angle are both small means it is facing the target. 
+    // abs(dir[0] * dir[1]) < abs(dir[2]*dir[3]) means the ship is on headwind. 
     
-    // head wind
-    if((angle_corr(wing_front_lower - target_bearing) < 0 
-        && angle_corr(wing_front_upper - target_bearing) > 0)
-        || abs(wing_angle) < wing_limit_angle) // this is needed. otherwise it keep turn in when target is around 30 degree
-    if(abs(wing_angle) < wing_limit_angle) // ... why this simple things works? other than the above
-    {      
-      //print((int) zigzag_side, " head wind!  ");
-      if(zigzag_side < 0)
-      {
-        correction += angle_corr(wing_front_lower - target_bearing);
-      }
-      else
-      {
-        correction += angle_corr(wing_front_upper - target_bearing); 
-      }
-      correction = angle_corr(correction);
-    }
-    //print((int)wing_front_upper,(int) wing_front_lower, (int)wing_angle, (int)target_bearing, (int)correction, " \n");
+    // should only use dir[0] and dir[1] for angle correction?
     
-    //float first, second, third, forth; // dimemsion of available angle
-    //float wing_bearing = (float)get_bearing(ship.bearing + wing_angle);
-    //first = (float)get_bearing(wing_bearing + 180 + (180 -wing_limit_angle));
-    //second = (float)get_bearing(wing_bearing + wing_limit_angle);
-    //third = (float)get_bearing(wing_bearing + (180 - wing_limit_angle));
-    //forth = (float)get_bearing(wing_bearing + 180 + wing_limit_angle);
+    
+    print((int)dir[0], (int)dir[1], (int)dir[2], (int)dir[3],  (int)(target_bearing)," \n");
+    
+    
+    
+    
+    //// minimum rotation to the target. 
+    //float min_dir_neg = -181, min_dir_pos = 181;
+    //int min_dir_neg_idx = 5, min_dir_pos_idx = 5;
+    //for(int i=0; i<4; i++)
+    //{
+    //  if(dir[i] > 0 && dir[i] < min_dir_pos){
+    //    min_dir_pos = dir[i];
+    //    min_dir_pos_idx = i;
+    //  }
+    
+    //  if(dir[i] <= 0 && dir[i] > min_dir_neg){
+    //    min_dir_neg = dir[i];
+    //    min_dir_neg_idx = i;
+    //  }
+    //}
+    
+    //if(abs(dir[min_dir_neg_idx]) < abs(dir[min_dir_pos_idx])) 
+    //{
+    //   correction += dir[min_dir_pos_idx];
+    //}
+    //else
+    //{
+    //   correction += dir[min_dir_neg_idx];
+    //}
+   
+       //    print("tail wind ");
+    //   if(zigzag_side < 0) // zigzag > 0 = left
+    //        correction += first; 
+    //    else
+    //        correction += second;
+    //  }
+       
+   //correction = angle_corr(correction);
+    
+    
+    //print((int)dir[0], (int)dir[1], (int)dir[2], (int)dir[3], (int)min_dir_pos_idx, (int)min_dir_neg_idx, (int)(target_bearing)," \n");
+    
+    
+    
+    
     
     //if(abs(wing_angle) < wing_limit_angle) // ... why this simple things works? other than the above
-    //{ 
-    //  // calculate each angle and decide which to use. 
-    //  first = angle_corr(first - target_bearing);
-    //  second = angle_corr(second - target_bearing);
-    //  third = angle_corr(third - target_bearing);
-    //  forth = angle_corr(forth - target_bearing);
-      
+    //{       
     //  // trick
     //  // head wind swing
     //  if(abs(first) + abs(second) < 90)
@@ -488,8 +657,10 @@ class Navigator{
     //  }
        
     //  correction = angle_corr(correction);
-    //  print((int)first, (int)second, (int)third, (int)forth, (int)correction, (int)target_bearing, int(ship.bearing)," \n");
+
     //}
+    
+    //print((int)first, (int)second, (int)third, (int)forth, (int)correction, (int)target_bearing, int(ship.bearing)," \n");
     
     //print((int)wing_front_upper,(int) wing_front_lower, (int)wing_angle, (int)target_bearing, (int)correction, " \n");
     
@@ -519,27 +690,27 @@ class Navigator{
     //print((int)ship.bearing, (int)ship.wing.angle, '\n');
 
     // avoid oscillation and shooting backward, when angle >90, freezed the correction until it turns back to target. 
-    float  corr_angle = angle_corr(ship2target - ship.bearing);
-    if(abs(corr_angle) >120 && !is_critical_bearing)
-    {
-       is_critical_bearing = true;  
-       freezed_correction = zigzag_side ; // turn to the zigzag side
-       print("\ncritical bearing", freezed_correction, "\n ");   
-    }
-    if(abs(corr_angle) < 90)
-    {
-        if(is_critical_bearing)
-        {
-          is_target_updated = true; // test, to reset all 
-          zigzag_side = -zigzag_side; // test, when reach the target, invert the side. 
-        }
-        is_critical_bearing = false;
-    }
+    //float  corr_angle = angle_corr(ship2target - ship.bearing);
+    //if(abs(corr_angle) >170 && !is_critical_bearing)
+    //{
+    //   is_critical_bearing = true;  
+    //   freezed_correction = zigzag_side ; // turn to the zigzag side
+    //   print("\ncritical bearing", freezed_correction, "\n ");   
+    //}
+    //if(abs(corr_angle) < 90)
+    //{
+    //    if(is_critical_bearing)
+    //    {
+    //      is_target_updated = true; // test, to reset all 
+    //      zigzag_side = -zigzag_side; // test, when reach the target, invert the side. 
+    //    }
+    //    is_critical_bearing = false;
+    //}
      
-    if(is_critical_bearing)
-    {
-        correction = freezed_correction; // override
-    }
+    //if(is_critical_bearing)
+    //{
+    //    correction = freezed_correction; // override
+    //}
 
      
     if(correction > 0)
@@ -563,7 +734,10 @@ class Navigator{
       pushMatrix();
       stroke(32);
       textAlign(CENTER, TOP);
-      fill(255, 255, 255);
+      if(size <=10)
+        fill(255, 255, 255);
+      else
+        fill(255, 255, 0);
       circle(x, y, size);
       text("("+nf((float)loc.lat, 0, 5) + ", " + nf((float)loc.lon, 0, 5)+")", x, y+size);
       popMatrix();
@@ -633,10 +807,20 @@ class Navigator{
     clen = cos(ang) * (float)world.m2pix(path_width/2);
     slen = sin(ang) * (float)world.m2pix(path_width/2);
     // draw 
-  
     stroke(96, 150, 128);
     line(x1+slen, y1+clen, x2+slen, y2+clen);
     line(x1-slen, y1-clen, x2-slen, y2-clen);
+    
+    for(int i= 1; i<waypoints.size(); i++)
+    {
+      x1 = x2;
+      y1 = y2;
+      x2 = (float)world.deg2pix_x(waypoints.get(i).lat);;
+      y2 = (float)world.deg2pix_y(waypoints.get(i).lon);;
+      stroke(96, 150, 192);
+      line(x1, y1, x2, y2);
+      draw_target(waypoints.get(i), 10);
+    }
   }
 }
 

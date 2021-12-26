@@ -9,6 +9,11 @@ class Coor {
     this.lon = longitude;
     this.lat = latitude;
   }
+  
+  Coor(Coor c){ 
+    this.lon = c.lon;
+    this.lat = c.lat;
+  }
 }
 
 
@@ -17,16 +22,16 @@ class World {
   double timestamp_updated = 0;
   
   Coor coor_centre = new Coor(0, 0);
-  float world_width = 200; // the size of the world in metre = windows width
+  float world_width = 800; // the size of the world in metre = windows width
   
   Coor coor_min = new Coor(-1, -1);
   Coor coor_max = new Coor(1, 1);
   
   float wind_speed = 5;  // wind speed in m/s
   float wind_speed_init = 5; 
-  float wind_guest = 0;  // wind guest in m/s
+  float wind_guest = 1;  // wind guest in m/s
   float wind_dir = 135;    // wind direction from 0-360
-  float wind_dir_random = 0; // rate of randomized wind direction drifting. 
+  float wind_dir_random = 5; // rate of randomized wind direction drifting. 
   
   float current_speed = 0;  // current speed in m/s
   float current_speed_init = 0;
@@ -87,8 +92,10 @@ class World {
     
     wind_speed = wind_speed_init + random(-wind_guest, wind_guest);
     wind_dir += random(-wind_dir_random, wind_dir_random);
+    wind_dir = (float)get_bearing(wind_dir);
     current_speed = current_speed_init + random(-current_guest, current_guest);
     current_dir += random(-current_dir_random, current_dir_random);
+    current_dir = (float)get_bearing(current_dir);
   }
   
   void draw_grid(){
@@ -126,7 +133,7 @@ class World {
   void draw_current()
   {
     pushMatrix();
-    translate(width-50, 50);
+    translate(width-60, 60);
     rotate((wind_dir+180) / 180 * PI);
     fill(255, 255, 255);
     beginShape();
@@ -137,16 +144,17 @@ class World {
     endShape(CLOSE);
     popMatrix();
     textAlign(CENTER, CENTER);
-    textSize(16);
-    text("Wind " + (int)(wind_dir), width-50, 70);
+    textSize(14);
+    text("Wind " + (int)(wind_dir) + "deg", width-60, 90);
+    text("Speed " + (int)(wind_speed) + "m/s", width-60, 110);
   }
   
   void draw_compass()
   {
-    float x = width-150;
+    float x = width-180;
     float y = 70;
     float space = 40;
-    float space2 = 25;
+    float space2 = 20;
     pushMatrix();
     
     stroke(200);

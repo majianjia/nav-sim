@@ -18,7 +18,6 @@ class Wing {
   
   float lift;          // lift generated from the wing, perpendicular to the  direction
   float drag;          // not using it yet. 
- 
   
   void update(float step, Ship ship, World world)
   {
@@ -40,7 +39,7 @@ class Ship {
   // ship
   float speed = 0;        // speed in m/s
   float speed_momentum = 0.9; // speed momentum
-  float speed_min= 0.5; // speed momentum
+  float speed_min= -1.0; // speed mini (when test, set to positive to push the ship forward even wind is reversed.)
   float bearing = 0;      // 0-360 degree
   float rudder_cof = 2;   // rudder coefficient 
   float turn_momentum = 0; //
@@ -59,8 +58,10 @@ class Ship {
   }
   
   void update(float step, float rudder, World world){
+    // test with step
+    rudder = rudder*20*step;
     // ship bearing
-    turn_momentum = turn_momentum*turn_momentum_filter + rudder*(1-turn_momentum_filter); // filter
+    turn_momentum = turn_momentum*turn_momentum_filter + (rudder)*(1-turn_momentum_filter); // filter
     bearing += turn_momentum;//*sqrt(speed); // simulate the turning effectiveness, the faster you turn, larger radius
     if(bearing < 0)
         bearing += 360;
@@ -78,8 +79,8 @@ class Ship {
     loc.lat += Math.sin((bearing) / 180 * PI) * speed / R * 180/PI * step ; // also consider the step.
     loc.lon += Math.cos((bearing) / 180 * PI) * speed / R * 180/PI * step;
     
-    loc.lat -= Math.sin((world.wind_dir) / 180 * PI)*speed * 0.3 / R * 180/PI * step;  // drift by wind, test only
-    loc.lon -= Math.cos((world.wind_dir) / 180 * PI)*speed * 0.3 / R * 180/PI * step; 
+    loc.lat -= Math.sin((world.wind_dir) / 180 * PI)*speed * 0.2 / R * 180/PI * step;  // drift by wind, test only
+    loc.lon -= Math.cos((world.wind_dir) / 180 * PI)*speed * 0.2 / R * 180/PI * step; 
      
     loc.lon = Math.min(Math.max(loc.lon, world.coor_min.lon), world.coor_max.lon);
     loc.lat = Math.min(Math.max(loc.lat, world.coor_min.lat), world.coor_max.lat);
@@ -122,7 +123,7 @@ class Ship {
     rotate((wing.angle + bearing + 180) / 180 * PI);
     // sail colour
     
-    if(abs(wing.angle) < 30 || abs(wing.angle)>150){
+    if(abs(wing.angle) < 25 || abs(wing.angle)>180-25){
       stroke(255, 128, 128);
       fill(255, 0, 0);
     }
