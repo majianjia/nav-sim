@@ -21,17 +21,17 @@ class World {
   double timestamp = 0;
   double timestamp_updated = 0;
   
-  Coor coor_centre = new Coor(0, 0);
+  Coor coor_centre = new Coor(1,1);
   float world_width = 800; // the size of the world in metre = windows width
   
   Coor coor_min = new Coor(-1, -1);
   Coor coor_max = new Coor(1, 1);
   
-  float wind_speed = 5;  // wind speed in m/s
+  float wind_speed = 0;  // wind speed in m/s
   float wind_speed_init = 5; 
   float wind_guest = 1;  // wind guest in m/s
   float wind_dir = 135;    // wind direction from 0-360
-  float wind_dir_random = 5; // rate of randomized wind direction drifting. 
+  float wind_dir_random = 0; // rate of randomized wind direction drifting. 
   
   float current_speed = 0;  // current speed in m/s
   float current_speed_init = 0;
@@ -39,7 +39,7 @@ class World {
   float current_dir = 0;    // current direction from 0-360
   float current_dir_random = 0; // rate of randomized wind direction drifting. 
   
-  ParticleSystem ps = new ParticleSystem(new PVector(width/2, 50));
+  ParticleSystem ps = new ParticleSystem(new PVector(width/2, 255));
   
   World(){
     // use windows size and the ranges to 
@@ -65,20 +65,20 @@ class World {
     return -m * width / world_width + height/2; // (width/world_width) is the scale factor. screen y is inverted. 
   }
   double deg2pix_x(double deg){
-    return deg2pix(deg) + width/2;
+    return deg2pix(deg - coor_centre.lon) + width/2;
   }
   double deg2pix_y(double deg){
-    return -deg2pix(deg) + height/2;// (width/world_width) is the scale factor. 
+    return -deg2pix(deg - coor_centre.lat) + height/2;// (width/world_width) is the scale factor. 
   }
   
   double pix2deg(int pix){
     return pix * 180/PI / R / width * world_width;
   }
   double pix2deg_x(int pix){
-    return pix2deg(pix - width/2);
+    return pix2deg(pix - width/2) + coor_centre.lon;
   }
   double pix2deg_y(int pix){
-    return -pix2deg(pix - height/2);
+    return -pix2deg(pix - height/2)  + coor_centre.lat;
   }
   
  
@@ -171,11 +171,17 @@ class World {
   }
 
   
-  void draw(){
+  void draw(float acc){
     draw_grid();
     draw_current();
     draw_compass();
-    ps.addParticle(new PVector(random(0, width), random(0, height)), (float)m2pix(wind_speed/frame_rate), wind_dir, color(255, 255, 255));
+    //for( int i=0; i<acc; i++)
+    //{
+    //  ps.addParticle(new PVector(random(0, width), random(0, height)), 
+    //    (float)m2pix(wind_speed/frame_rate*acc), wind_dir, 10000.0/acc, color(255, 255, 255));
+    //}
+    ps.addParticle(new PVector(random(0, width), random(0, height)), 
+        (float)m2pix(wind_speed/frame_rate), wind_dir, 1000, color(255, 255, 255));
     ps.run();
   }
 }

@@ -38,12 +38,12 @@ class Ship {
 
   // ship
   float speed = 0;        // speed in m/s
-  float speed_momentum = 0.9; // speed momentum
+  float speed_momentum = 0.98; // speed momentum
   float speed_min= -1.0; // speed mini (when test, set to positive to push the ship forward even wind is reversed.)
   float bearing = 0;      // 0-360 degree
   float rudder_cof = 2;   // rudder coefficient 
   float turn_momentum = 0; //
-  float turn_momentum_filter = 0.9; //
+  float turn_momentum_filter = 0.98; //
   
   // wings
   Wing wing = new Wing();
@@ -52,7 +52,7 @@ class Ship {
   ParticleSystem ps = new ParticleSystem(new PVector(width/2, 255));
 
   Ship(){ }
-  Ship(float lat, float lon){
+  Ship(double lat, double lon){
     loc.lat = lat;
     loc.lon = lon;
   }
@@ -91,7 +91,7 @@ class Ship {
     float ship_x = (float)world.deg2pix_x(loc.lat);
     float ship_y = (float)world.deg2pix_y(loc.lon);
     
-    ps.addParticle(new PVector(ship_x, ship_y), 0, 0, color(255,128,255)); // draw path
+    ps.addParticle(new PVector(ship_x, ship_y), 0, 0, 5000, color(255,128,255)); // draw path
     ps.run();
     
     stroke(32);
@@ -123,7 +123,7 @@ class Ship {
     rotate((wing.angle + bearing + 180) / 180 * PI);
     // sail colour
     
-    if(abs(wing.angle) < 25 || abs(wing.angle)>180-25){
+    if(abs(wing.angle) < 28 || abs(wing.angle)>180-28){
       stroke(255, 128, 128);
       fill(255, 0, 0);
     }

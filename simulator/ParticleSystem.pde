@@ -14,8 +14,8 @@ class ParticleSystem {
     particles.add(new Particle(location, speed, bearing));
   }
   
-    void addParticle(PVector location, float speed, float bearing, color c) {
-    particles.add(new Particle(location, speed, bearing, c));
+    void addParticle(PVector location, float speed, float bearing, float life, color c) {
+    particles.add(new Particle(location, speed, bearing, life, c));
   }
 
   void run() {

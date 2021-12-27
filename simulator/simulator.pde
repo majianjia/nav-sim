@@ -18,7 +18,7 @@ void settings(){
 void setup() {
   frameRate(frame_rate);
   world = new World();
-  ship = new Ship(-0.0005, -0.0002);
+  ship = new Ship(world.coor_centre.lat, world.coor_centre.lon);
   navi = new Navigator();
 }
 
@@ -44,6 +44,7 @@ void draw_info(Ship ship, Navigator navi, World world)
     textAlign(LEFT, CENTER);
     text("speed: " +acc_speed + "x", x, idx++*space); 
     text("ship bearing: " + int(ship.bearing) + "deg", x, idx++*space);
+    text("target bearing: " + int(navi.bearing) + "deg", x, idx++*space);
     text("ship speed: " + nf(ship.speed, 0, 1), x, idx++*space);
     text("wing angle: " + int(ship.wing.angle), x, idx++*space);
     text("wing effi: " + int(wing_efficiency) + '%', x, idx++*space);
@@ -86,7 +87,7 @@ void draw() {
     stroke(32);
     fill(255);
 
-    world.draw();
+    world.draw(acc_speed);
     navi.draw(ship, world);
     ship.draw(world);
     draw_info(ship, navi, world);

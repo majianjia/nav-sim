@@ -193,7 +193,7 @@ class Navigator{
   
   LinkedList<Coor> waypoints =new LinkedList<Coor>();
 
-  float path_width = 20; 
+  float path_width = 80; 
   float out_path_dis =   path_width * 3;
   float max_off_angle = 70;
   float cross_track_ratio = 5; // 1 meter cross track error = N degree
@@ -407,8 +407,8 @@ class Navigator{
      float base2target = (float)get_bearing(get_theta(ba, ta));
      float ship2target = (float)get_bearing(get_theta(ship.loc, ta));
        
-    //boolean is_sailing = true;
     boolean is_sailing = true;
+    //boolean is_sailing = false;
     
     //float correction = angle_corr(base2target - ship.bearing); // use track bearing
     float correction = angle_corr(ship2target - ship.bearing); // use ship bearing. 
@@ -503,17 +503,13 @@ class Navigator{
     dir[1] = angle_corr(second - target_bearing);
     dir[2] = angle_corr(third - target_bearing);
     dir[3] = angle_corr(forth - target_bearing);
-    
-    //dir[0] = angle_corr(first - ship2target);
-    //dir[1] = angle_corr(second - ship2target);
-    //dir[2] = angle_corr(third - ship2target);
-    //dir[3] = angle_corr(forth - ship2target);
+   
     
     // detect the target bearing is in which section. 
     // 1 = first-second. 2 = second-third, 3 = third-forth, 4= forth-first. 
     // forbiden sections are 1 and 3. In these section, will need to perform zigzagging. 
     
-    print((int)correction, " ");
+    //print((int)correction, " ");
     
     //// compensate the ship bearing to track bearing 
     //// because we are using current target bearing, when it near the target, it will start oscillating between zigzaging or direct mode.
@@ -521,7 +517,7 @@ class Navigator{
     float off = angle_corr(base2target - target_bearing); //
     float first_ext = dir[0];
     float second_ext = dir[1];
-    print((int)off, " ");
+    //print((int)off, " ");
     //if(zigzag_side > 0)
     //  first_ext = angle_corr(dir[0] - off); 
     //else 
@@ -579,7 +575,7 @@ class Navigator{
     
                   
     //print((int)offset, " "); 
-    print((int)correction, " ");
+    //print((int)correction, " ");
     
     // when in dead zone, which pair's correction angle are both small means it is facing the target. 
     // abs(dir[0] * dir[1]) < abs(dir[2]*dir[3]) means the ship is on headwind. 
@@ -587,7 +583,7 @@ class Navigator{
     // should only use dir[0] and dir[1] for angle correction?
     
     
-    print((int)dir[0], (int)dir[1], (int)dir[2], (int)dir[3],  (int)(target_bearing)," \n");
+    //print((int)dir[0], (int)dir[1], (int)dir[2], (int)dir[3],  (int)(target_bearing)," \n");
     
     
     
@@ -723,6 +719,8 @@ class Navigator{
     //print("correction", (int)correction, "wing", int(ship.wing.angle), "ship bearing", int(ship.bearing), 
     //      "track angle", (int)track_angle,"offset angle", (int)offset_angle, "distance", (int)ta_dis, "cross track", (int)ct_dis, "\n");
     
+    
+    bearing = (float)get_bearing(ship.bearing + correction);
     //return rudder;
           
   }
