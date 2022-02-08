@@ -2,7 +2,7 @@
 
 Navigation simulator is base on Processing 3 (Java) programming language to provide a simple world simulation. This project was built for validating the navigation algorithm for [DeepPlankter drone boat project](https://github.com/majianjia/DeepPlankter) before it can be deployed to the boat.
 
-![nav-sim-loop.gif](doc\nav-sim-loop.gif)
+![](doc\nav-sim-loop.gif)
 
 One of the key challenges in the boat navigation is the boat's propulsions system. The boat is propelled by underwater wings (wave) and in air free-rotate wing which are both very weak and unstable. There are chances that the boat being push to the opposite direction in strong wind or tide current. The navigation algorithm for air drone might not be able to handle those situation.
 
@@ -38,7 +38,7 @@ There are some executables allow you to play without touching the code, they are
 
 - Right mouse button for deleting the last waypoint. 
 
-![nav-sim-waypoint.gif](nav-sim-waypoint.gif)
+![](nav-sim-waypoint.gif)
 
 > For more details about navigation algorithm, please refer to the [DeepPlankter](https://github.com/majianjia/DeepPlankter) project. 
 
