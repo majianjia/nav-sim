@@ -21,7 +21,7 @@ class World {
   double timestamp = 0;
   double timestamp_updated = 0;
   
-  Coor coor_centre = new Coor(1,1);
+  Coor coor_centre = new Coor(0,0);
   float world_width = 800; // the size of the world in metre = windows width
   
   Coor coor_min = new Coor(-1, -1);
@@ -29,7 +29,7 @@ class World {
   
   float wind_speed = 0;  // wind speed in m/s
   float wind_speed_init = 5; 
-  float wind_guest = 1;  // wind guest in m/s
+  float wind_guest = 0;  // wind guest in m/s
   float wind_dir = 135;    // wind direction from 0-360
   float wind_dir_random = 0; // rate of randomized wind direction drifting. 
   
@@ -80,8 +80,7 @@ class World {
   double pix2deg_y(int pix){
     return -pix2deg(pix - height/2)  + coor_centre.lat;
   }
-  
- 
+   
 
   void update(float step){
     // only update every second. 
@@ -130,11 +129,15 @@ class World {
     }
   }
   
+  AngleFilter filter = new AngleFilter(0.98);
   void draw_current()
   {
+    float rotate = wind_dir;
+    rotate = (float)filter.update_deg((float)rotate);
+    
     pushMatrix();
     translate(width-60, 60);
-    rotate((wind_dir+180) / 180 * PI);
+    rotate((rotate+180) / 180 * PI);
     fill(255, 255, 255);
     beginShape();
     vertex(-10.0, -10.0);

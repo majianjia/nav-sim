@@ -19,6 +19,8 @@ class Wing {
   float lift;          // lift generated from the wing, perpendicular to the  direction
   float drag;          // not using it yet. 
   
+  //AngleFilter filter = new AngleFilter(0.8);
+  
   void update(float step, Ship ship, World world)
   {
       // calculate the sail angle to the ship
@@ -27,6 +29,9 @@ class Wing {
       float v = sqrt(vx*vx + vy*vy);
       angle = atan2(vy, vx)*180/PI - ship.bearing;
       angle = angle_corr(angle); // convert it back to -180 to 180
+      // test filter
+      //angle = (float)filter.update_deg((float)angle);
+      
       speed = v;
       lift = speed * cl; // simple linear test 
       //print("v", v, "angle", int(angle), "\n");
@@ -39,11 +44,11 @@ class Ship {
   // ship
   float speed = 0;        // speed in m/s
   float speed_momentum = 0.98; // speed momentum
-  float speed_min= -1.0; // speed mini (when test, set to positive to push the ship forward even wind is reversed.)
+  float speed_min= -2.0; // speed mini (when test, set to positive to push the ship forward even wind is reversed.)
   float bearing = 0;      // 0-360 degree
   float rudder_cof = 2;   // rudder coefficient 
   float turn_momentum = 0; //
-  float turn_momentum_filter = 0.98; //
+  float turn_momentum_filter = 0.99; //
   
   // wings
   Wing wing = new Wing();
@@ -59,7 +64,7 @@ class Ship {
   
   void update(float step, float rudder, World world){
     // test with step
-    rudder = rudder*20*step;
+    rudder = rudder*10*step;
     // ship bearing
     turn_momentum = turn_momentum*turn_momentum_filter + (rudder)*(1-turn_momentum_filter); // filter
     bearing += turn_momentum;//*sqrt(speed); // simulate the turning effectiveness, the faster you turn, larger radius
@@ -91,7 +96,7 @@ class Ship {
     float ship_x = (float)world.deg2pix_x(loc.lat);
     float ship_y = (float)world.deg2pix_y(loc.lon);
     
-    ps.addParticle(new PVector(ship_x, ship_y), 0, 0, 5000, color(255,128,255)); // draw path
+    ps.addParticle(new PVector(ship_x, ship_y), 0, 0, 2000, color(255,128,255)); // draw path
     ps.run();
     
     stroke(32);
