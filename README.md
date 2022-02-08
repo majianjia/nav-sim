@@ -47,7 +47,3 @@ There are some executables allow you to play without touching the code, they are
 Author: Jianjia Ma
 
 email: majianjia(at)live.com
-
-
-
-
