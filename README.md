@@ -40,7 +40,7 @@ There are some executables allow you to play without touching the code, they are
 
 ![](doc/nav-sim-waypoint.gif)
 
-> For more details about navigation algorithm, please refer to the [DeepPlankter](https://github.com/majianjia/DeepPlankter) project. 
+> For more details about navigation algorithm, please refer to the [DeepPlankter](https://github.com/majianjia/DeepPlankter) project's [dedicated navigation development log](https://github.com/majianjia/DeepPlankter/blob/main/doc/navigation.md). 
 
 ## Contact
 
